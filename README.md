@@ -53,6 +53,35 @@ Use Python 3. Install pySerial:
 python -m pip install pyserial
 ```
 
+Or, to create a new environment:
+### Windows Setup (PowerShell)
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install pyserial
+.\.venv\Scripts\python.exe -c "import serial; print(serial.__version__)"
+```
+
+Then to run:
+```bash
+.\.venv\Scripts\python.exe trigger_control.py
+```
+
+### Linux/MacOS Setup (Terminal)
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install pyserial
+.venv/bin/python -c "import serial; print(serial.__version__)"
+```
+
+Then to run:
+```bash
+.venv/bin/python trigger_control.py
+```
+
 Save `trigger_control.py` in your project directory.
 
 ## 2. Find the Arduino

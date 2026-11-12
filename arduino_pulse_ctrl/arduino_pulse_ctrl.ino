@@ -2,6 +2,7 @@
 
 const int TRIGGER_PIN = 10;
 const int BUFFER_SIZE = 1000;
+constexpr static int DUAL_TRIGGER_PIN = 7;
 
 char comBuf[BUFFER_SIZE];
 int bytesRecvd = 0;
@@ -30,6 +31,9 @@ int completedPulses = 0;
 
 void setTrigger(bool state) {
   digitalWrite(TRIGGER_PIN, state ? HIGH : LOW);
+  if constexpr (DUAL_TRIGGER_PIN > 0){
+    digitalWrite(DUAL_TRIGGER_PIN, state ? HIGH : LOW);
+  }
   on = state;
 }
 
@@ -149,6 +153,9 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(TRIGGER_PIN, OUTPUT);
+  if constexpr (DUAL_TRIGGER_PIN > 0){
+    pinMode(DUAL_TRIGGER_PIN, OUTPUT);
+  }
   setTrigger(false);
 }
 

@@ -20,14 +20,25 @@ classdef ArduinoController < handle
     properties (SetAccess = private)
         Port
         BaudRate
+        ArduinoTriggerTime_ms
 
         % Logging
         LogFile
         LoggingEnabled
         LogTimestamps
         LogElapsedSeconds
+        LogArduinoTriggerTime_ms
         LogTriggerNumbers
         LogClock
+        LogTrainIndex
+        LogChannelNumber
+        LogMode
+        LogPulseAmplitude
+        LogPulseDuration_us
+        LogBipolar
+        LogNumberOfPulses
+        LogTrainFrequency_Hz
+        stimjim_cfg
     end
 
     properties (Access = private)
@@ -68,6 +79,8 @@ classdef ArduinoController < handle
 
             obj.Port = char(port);
             obj.BaudRate = baudRate;
+            obj.ArduinoTriggerTime_ms = 1000;
+
 
             % Initialize logging variables
             obj.LoggingEnabled = false;
@@ -76,6 +89,19 @@ classdef ArduinoController < handle
             obj.LogElapsedSeconds = [];
             obj.LogTriggerNumbers = [];
             obj.LogClock = [];
+            obj.LogArduinoTriggerTime_ms = [];
+            % StimJim properties
+            obj.LogTrainIndex = [];
+            obj.LogChannelNumber = [];
+            obj.LogMode = [];
+            obj.LogPulseAmplitude = [];
+            obj.LogPulseDuration_us = [];
+            obj.LogBipolar = [];
+            obj.LogNumberOfPulses = [];
+            obj.LogTrainFrequency_Hz = [];
+            obj.stimjim_cfg = [];
+
+
 
             % Connect to Arduino
             fprintf('Connecting to Arduino on %s...\n', obj.Port);
@@ -84,7 +110,10 @@ classdef ArduinoController < handle
                 obj.BaudRate, 'Timeout', timeoutSeconds);
 
             configureTerminator(obj.SerialObj, "LF");
+            pause(2);
             flush(obj.SerialObj);
+
+            % writeline(, 'S');
 
             fprintf('Serial connection established.\n');
 
@@ -110,16 +139,42 @@ classdef ArduinoController < handle
             end
         end
 
+        function log_stimjim_cfg(obj)
+            if obj.LoggingEnabled
+                obj.LogTrainIndex(end+1, 1) = ...
+                    obj.stimjim_cfg.trainIndex;
+                obj.LogChannelNumber(end+1,1) = ...
+                    obj.stimjim_cfg.channelNumber ;
+                obj.LogMode(end+1,1) = ...
+                    obj.stimjim_cfg.mode;
+                obj.LogPulseAmplitude(end+1,1) = ...
+                    obj.stimjim_cfg.pulseAmplitude;
+                obj.LogPulseDuration_us(end+1,1) = ...
+                    obj.stimjim_cfg.pulseDuration_us;
+                obj.LogBipolar(end+1,1) = ...
+                    obj.stimjim_cfg.bipolar;
+                obj.LogNumberOfPulses(end+1,1) = ...
+                    obj.stimjim_cfg.numberOfPulses;
+                obj.LogTrainFrequency_Hz(end+1,1) = ...
+                    obj.stimjim_cfg.trainFrequency_Hz;
+                % This is an arduino one, but this should be done anyways, so may as well put it here
+                % It is another constant that will not change with the trigger
+                obj.LogArduinoTriggerTime_ms(end+1, 1) = ...
+                    obj.ArduinoTriggerTime_ms;
+            end
+        end
 
         %% VERIFY CONNECTION
 
         function tf = verify_setup(obj)
 
-            obj.sendLine("S");
+            writeline(obj.SerialObj, 'S');
 
             try
                 response = strtrim(readline(obj.SerialObj));
-
+                fprintf("\nGot response when verifying...");
+                fprintf(response);
+                fprintf("\n");
                 tf = strcmp(response, ...
                     "This is a custom trigger arduino!");
 
@@ -157,6 +212,7 @@ classdef ArduinoController < handle
                 obj.LogTimestamps(end+1,1) = timestamp;
 
                 obj.LogElapsedSeconds(end+1,1) = elapsed;
+                obj.log_stimjim_cfg();
 
             end
 
@@ -223,6 +279,15 @@ classdef ArduinoController < handle
             obj.LogTimestamps = strings(0,1);
             obj.LogElapsedSeconds = [];
             obj.LogTriggerNumbers = [];
+            obj.LogTrainIndex = [];
+            obj.LogChannelNumber = [];
+            obj.LogMode = [];
+            obj.LogPulseAmplitude = [];
+            obj.LogPulseDuration_us = [];
+            obj.LogBipolar = [];
+            obj.LogNumberOfPulses = [];
+            obj.LogTrainFrequency_Hz = [];
+            obj.LogArduinoTriggerTime_ms = [];
 
             % Start independent experiment timer
             obj.LogClock = tic;
@@ -244,14 +309,32 @@ classdef ArduinoController < handle
                 return;
             end
 
-            logTable = table( ...
-                obj.LogTriggerNumbers, ...
-                obj.LogTimestamps, ...
-                obj.LogElapsedSeconds, ...
-                'VariableNames', { ...
-                    'TriggerNumber', ...
-                    'Timestamp', ...
-                    'ElapsedSeconds'});
+        logTable = table( ...
+            obj.LogTriggerNumbers, ...
+            obj.LogTimestamps, ...
+            obj.LogElapsedSeconds, ...
+            obj.LogArduinoTriggerTime_ms, ...
+            obj.LogTrainIndex, ...
+            obj.LogChannelNumber, ...
+            obj.LogMode, ...
+            obj.LogPulseAmplitude, ...
+            obj.LogPulseDuration_us, ...
+            obj.LogBipolar, ...
+            obj.LogNumberOfPulses, ...
+            obj.LogTrainFrequency_Hz, ...
+            'VariableNames', { ...
+                'TriggerNumber', ...
+                'Timestamp', ...
+                'ElapsedSeconds', ...
+                'ArduinoTriggerTime (ms)', ...
+                'TrainIndex', ...
+                'ChannelNumber', ...
+                'Mode', ...
+                'PulseAmplitude', ...
+                'PulseDuration_us', ...
+                'Bipolar', ...
+                'NumberOfPulses', ...
+                'TrainFrequency_Hz'});
 
             writetable(logTable, obj.LogFile);
 
